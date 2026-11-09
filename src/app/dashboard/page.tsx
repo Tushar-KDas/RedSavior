@@ -58,6 +58,10 @@ import {
   Hospital as HospitalIcon,
   Shield,
   Eye,
+  Database,
+  Server,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 
 // Line Chart Data
@@ -135,6 +139,83 @@ export default function DashboardPage() {
   const [userRoleFilter, setUserRoleFilter] = useState<string>("ALL");
   const [donorBloodFilter, setDonorBloodFilter] = useState<string>("ALL");
   const [requestStatusFilter, setRequestStatusFilter] = useState<string>("ALL");
+
+  // Supabase Database Connection State
+  const [supabaseStatus, setSupabaseStatus] = useState<{
+    connected: boolean;
+    mode: string;
+    message: string;
+    url?: string;
+  } | null>(null);
+  const [supabaseUrlInput, setSupabaseUrlInput] = useState("");
+  const [supabaseAnonKeyInput, setSupabaseAnonKeyInput] = useState("");
+  const [supabaseServiceKeyInput, setSupabaseServiceKeyInput] = useState("");
+  const [isTestingDb, setIsTestingDb] = useState(false);
+  const [dbMessage, setDbMessage] = useState<string | null>(null);
+  const [dbSuccess, setDbSuccess] = useState<boolean | null>(null);
+  const [copiedSqlType, setCopiedSqlType] = useState<string | null>(null);
+
+  const fetchDbStatus = async () => {
+    try {
+      const res = await fetch("/api/supabase/status");
+      const data = await res.json();
+      setSupabaseStatus(data);
+      if (data.url && !data.url.includes("mock")) {
+        setSupabaseUrlInput(data.url);
+      }
+    } catch {
+      setSupabaseStatus({
+        connected: false,
+        mode: "mock",
+        message: "Offline Local Store active",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchDbStatus();
+  }, []);
+
+  const handleSaveSupabaseConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsTestingDb(true);
+    setDbMessage(null);
+
+    try {
+      const res = await fetch("/api/supabase/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: supabaseUrlInput,
+          anonKey: supabaseAnonKeyInput,
+          serviceKey: supabaseServiceKeyInput,
+        }),
+      });
+      const data = await res.json();
+      setDbSuccess(data.success);
+      setDbMessage(data.message);
+      if (data.success) {
+        fetchDbStatus();
+      }
+    } catch (err: any) {
+      setDbSuccess(false);
+      setDbMessage(err.message || "Failed to update configuration");
+    } finally {
+      setIsTestingDb(false);
+    }
+  };
+
+  const handleCopySql = async (type: "schema" | "geo") => {
+    try {
+      const res = await fetch(`/api/supabase/sql?type=${type}`);
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setCopiedSqlType(type);
+      setTimeout(() => setCopiedSqlType(null), 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -362,6 +443,25 @@ export default function DashboardPage() {
             >
               <FileText className="w-4 h-4" />
               <span>Audit Logs</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("database")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition ${
+                activeTab === "database"
+                  ? "bg-[#E50914] text-white"
+                  : "text-gray-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              <div className="flex items-center justify-between w-full">
+                <span>Database (Supabase)</span>
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    supabaseStatus?.connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                  }`}
+                />
+              </div>
             </button>
           </nav>
         </div>
