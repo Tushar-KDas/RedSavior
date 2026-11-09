@@ -703,6 +703,24 @@ class RedSaviorStore {
   }
 
   // ID Cards & QR Verification
+  getIdCards(): IdCardData[] {
+    return this.idCards;
+  }
+
+  getUsers(): UserProfile[] {
+    return this.users;
+  }
+
+  toggleUserSuspension(userId: string): boolean {
+    const u = this.users.find(item => item.id === userId);
+    if (u) {
+      u.isSuspended = !u.isSuspended;
+      this.saveToStorage();
+      return true;
+    }
+    return false;
+  }
+
   getIdCardByToken(qrToken: string): IdCardData | undefined {
     return this.idCards.find(c => c.qrToken === qrToken);
   }
