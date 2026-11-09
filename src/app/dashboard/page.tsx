@@ -28,6 +28,13 @@ import { DonorDashboard } from "@/components/dashboard/roles/DonorDashboard";
 import { RecipientDashboard } from "@/components/dashboard/roles/RecipientDashboard";
 import { NormalUserDashboard } from "@/components/dashboard/roles/NormalUserDashboard";
 
+// Dedicated Functional Role Modules & Print ID Card Modal
+import { PrintIdCardModal } from "@/components/dashboard/shared/PrintIdCardModal";
+import { DonorManagementModule } from "@/components/dashboard/modules/DonorManagementModule";
+import { FacilitiesAndStockModule } from "@/components/dashboard/modules/FacilitiesAndStockModule";
+import { CampaignsAndVolunteersModule } from "@/components/dashboard/modules/CampaignsAndVolunteersModule";
+import { AdministrationAndGovernanceModule } from "@/components/dashboard/modules/AdministrationAndGovernanceModule";
+
 import {
   Users,
   Droplet,
@@ -70,6 +77,7 @@ import {
   Copy,
   ExternalLink,
   PlusCircle,
+  Printer,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -83,6 +91,124 @@ export default function DashboardPage() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Print ID Card Modal State
+  const [selectedDonorForCard, setSelectedDonorForCard] = useState<DonorProfile | null>(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
+  // Tab Categorization Lists (Guarantees every single role tab has rich detailed content)
+  const DONOR_TABS = [
+    "donors",
+    "district-donors",
+    "local-donors",
+    "members",
+    "saved-donors",
+    "matched-donors",
+    "donor-matching",
+    "donor-intake",
+  ];
+
+  const FACILITY_STOCK_TABS = [
+    "hospitals",
+    "local-hospitals",
+    "hospital-directory",
+    "blood-banks",
+    "local-bloodbanks",
+    "blood-bank-directory",
+    "live-stock",
+    "component-stock",
+    "inventory",
+    "testing-screening",
+    "reservation-dispatch",
+    "hospital-orders",
+    "expiring-alerts",
+    "disposal-logs",
+    "blood-bank-links",
+    "partner-hospitals",
+  ];
+
+  const CAMPAIGN_VOLUNTEER_TABS = [
+    "volunteers",
+    "district-volunteers",
+    "volunteer-team",
+    "staff-verification",
+    "assigned-tasks",
+    "emergency-dispatches",
+    "camp-duty",
+    "donor-followups",
+    "verified-transports",
+    "badges-points",
+    "field-reports",
+    "campaigns",
+    "local-campaigns",
+    "donation-camps",
+    "drives",
+    "camp-collections",
+    "organizations",
+    "local-orgs",
+  ];
+
+  const REQUEST_TABS = [
+    "requests",
+    "district-requests",
+    "local-requests",
+    "emergency-requests",
+    "patient-requisitions",
+    "request-history",
+    "my-requests",
+    "urgent-requests",
+    "matched-requisitions",
+    "create-request",
+  ];
+
+  const LOCATION_TABS = ["locations", "districts", "upazilas"];
+
+  const ID_CARD_TABS = ["id-cards", "id-card", "qr-verification"];
+
+  const GOVERNANCE_TABS = [
+    "admins",
+    "recipients",
+    "roles-permissions",
+    "donations",
+    "donation-mgmt",
+    "donation-activities",
+    "donation-history",
+    "transfusion-records",
+    "complaints",
+    "ratings-reviews",
+    "notifications-mgmt",
+    "notifications",
+    "announcements",
+    "media",
+    "analytics",
+    "reports",
+    "local-reports",
+    "reports-registers",
+    "content",
+    "health-articles",
+    "community-feed",
+    "settings",
+    "system-config",
+    "backup",
+    "support",
+    "account",
+    "profile",
+    "health-log",
+    "reward-points",
+    "appointment-schedule",
+    "saved-hospitals",
+    "hospital-directions",
+    "verification-otp",
+    "thank-you-notes",
+    "become-donor",
+    "request-blood",
+    "requisition-support",
+    "certificates",
+    "sos-broadcast",
+    "donor-responses",
+    "availability",
+    "upazila-mgmt",
+  ];
 
   // Tab Filtering States
   const [userRoleFilter, setUserRoleFilter] = useState<string>("ALL");
@@ -393,110 +519,43 @@ export default function DashboardPage() {
           )}
 
           {/* =========================================================================
-              SHARED & PRESERVED TAB 2: DONOR MANAGEMENT
+              DONOR MANAGEMENT MODULE (64 DISTRICTS, LOGIN CREDENTIALS & PRINT ID CARD)
               ========================================================================= */}
-          {(activeTab === "donors" || activeTab === "district-donors" || activeTab === "local-donors" || activeTab === "members") && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
-                <div>
-                  <h2 className="text-xl font-black text-gray-900">Donor Management & Verification</h2>
-                  <p className="text-xs text-gray-500">
-                    Verify lifesavers, review medical donation intervals, and ensure nationwide blood safety.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={donorBloodFilter}
-                    onChange={(e) => setDonorBloodFilter(e.target.value)}
-                    className="text-xs font-semibold px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl"
-                  >
-                    <option value="ALL">All Blood Groups</option>
-                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bg) => (
-                      <option key={bg} value={bg}>
-                        {bg}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          {DONOR_TABS.includes(activeTab) && (
+            <DonorManagementModule
+              activeTab={activeTab}
+              onOpenPrintModal={(donor) => {
+                setSelectedDonorForCard(donor);
+                setIsPrintModalOpen(true);
+              }}
+            />
+          )}
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 text-gray-600 font-bold uppercase tracking-wider">
-                    <tr>
-                      <th className="p-3">Donor Name</th>
-                      <th className="p-3">Blood Group</th>
-                      <th className="p-3">Location</th>
-                      <th className="p-3">Donations</th>
-                      <th className="p-3">Verification</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {mockDb
-                      .getDonors()
-                      .filter((d) => donorBloodFilter === "ALL" || d.bloodGroup === donorBloodFilter)
-                      .map((d) => (
-                        <tr key={d.id} className="hover:bg-gray-50 transition">
-                          <td className="p-3 flex items-center gap-3">
-                            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                              <Image
-                                src={d.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"}
-                                alt={d.fullName}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="font-bold text-gray-900">{d.fullName}</div>
-                              <div className="text-[10px] text-gray-400">{d.humanReadableId}</div>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-black bg-red-100 text-[#E50914]">
-                              {d.bloodGroup}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            <div className="capitalize">{d.districtId}</div>
-                            <div className="text-[10px] text-gray-400 capitalize">{d.upazilaId}</div>
-                          </td>
-                          <td className="p-3 font-bold text-slate-800">{d.totalVerifiedDonations} units</td>
-                          <td className="p-3">
-                            {d.isVerified ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1 w-max">
-                                <ShieldCheck className="w-3 h-3" /> Verified
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1 w-max">
-                                <Clock className="w-3 h-3" /> Pending Review
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 text-right">
-                            {!d.isVerified ? (
-                              <button
-                                onClick={() => handleVerifyDonor(d.id)}
-                                className="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition"
-                              >
-                                Approve Donor
-                              </button>
-                            ) : (
-                              <span className="text-gray-400 text-[11px]">Approved</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          {/* =========================================================================
+              FACILITIES & BLOOD STOCK MODULE (HOSPITALS, BLOOD BANKS, 8x4 MATRIX)
+              ========================================================================= */}
+          {FACILITY_STOCK_TABS.includes(activeTab) && (
+            <FacilitiesAndStockModule activeTab={activeTab} />
+          )}
+
+          {/* =========================================================================
+              CAMPAIGNS, VOLUNTEERS & ORGANIZATIONS MODULE
+              ========================================================================= */}
+          {CAMPAIGN_VOLUNTEER_TABS.includes(activeTab) && (
+            <CampaignsAndVolunteersModule activeTab={activeTab} />
+          )}
+
+          {/* =========================================================================
+              ADMINISTRATION, GOVERNANCE & LIFESAVER FEATURES MODULE
+              ========================================================================= */}
+          {GOVERNANCE_TABS.includes(activeTab) && (
+            <AdministrationAndGovernanceModule activeTab={activeTab} />
           )}
 
           {/* =========================================================================
               SHARED & PRESERVED TAB 3: BLOOD REQUEST MANAGEMENT
               ========================================================================= */}
-          {(activeTab === "requests" || activeTab === "district-requests" || activeTab === "local-requests" || activeTab === "my-requests" || activeTab === "emergency-requests") && (
+          {REQUEST_TABS.includes(activeTab) && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                 <div>
@@ -596,7 +655,7 @@ export default function DashboardPage() {
           {/* =========================================================================
               SHARED & PRESERVED TAB 4: LOCATION MANAGEMENT
               ========================================================================= */}
-          {(activeTab === "locations" || activeTab === "districts" || activeTab === "upazilas") && (
+          {LOCATION_TABS.includes(activeTab) && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6">
               <div className="border-b border-gray-100 pb-4">
                 <h2 className="text-xl font-black text-gray-900">Geographic Hierarchy (Bangladesh)</h2>
@@ -639,9 +698,9 @@ export default function DashboardPage() {
           )}
 
           {/* =========================================================================
-              SHARED & PRESERVED TAB 5: ID CARD MANAGEMENT
+              SHARED & PRESERVED TAB 5: ID CARD MANAGEMENT & QR VERIFICATION
               ========================================================================= */}
-          {(activeTab === "id-cards" || activeTab === "id-card") && (
+          {ID_CARD_TABS.includes(activeTab) && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                 <div>
@@ -688,7 +747,32 @@ export default function DashboardPage() {
                             <ShieldCheck className="w-3 h-3" /> Cryptographically Signed
                           </span>
                         </td>
-                        <td className="p-3 text-right">
+                        <td className="p-3 text-right space-x-1">
+                          <button
+                            onClick={() => {
+                              const matchingDonor = mockDb.getDonors().find((d) => d.userId === c.userId || d.humanReadableId === c.displayId) || {
+                                id: c.userId,
+                                humanReadableId: c.displayId,
+                                fullName: c.holderName,
+                                bloodGroup: c.bloodGroup || "O+",
+                                districtId: "dhaka",
+                                upazilaId: "dhanmondi",
+                                totalVerifiedDonations: c.donationsCount || 4,
+                                isVerified: true,
+                                avatarUrl: c.avatarUrl,
+                                contactConsent: true,
+                                phone: "+8801711000000",
+                                loginEmail: `${c.displayId.toLowerCase()}@redsavior.org`,
+                                loginPassword: "RedSavior@2026",
+                              };
+                              setSelectedDonorForCard(matchingDonor as DonorProfile);
+                              setIsPrintModalOpen(true);
+                            }}
+                            className="px-2.5 py-1 bg-red-50 text-[#E50914] hover:bg-[#E50914] hover:text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1"
+                          >
+                            <Printer className="w-3 h-3" />
+                            <span>Print Card</span>
+                          </button>
                           <Link
                             href={`/verify-id/${c.qrToken}`}
                             className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg text-xs font-bold hover:bg-gray-200 transition inline-block"
@@ -935,6 +1019,33 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+
+          {/* =========================================================================
+              FALLBACK MODULE HANDLER (ENSURES NO ROLE TAB IS EVER EMPTY OR UNHANDLED)
+              ========================================================================= */}
+          {activeTab !== "dashboard" &&
+            activeTab !== "users" &&
+            activeTab !== "security" &&
+            activeTab !== "audit" &&
+            activeTab !== "database" &&
+            !DONOR_TABS.includes(activeTab) &&
+            !FACILITY_STOCK_TABS.includes(activeTab) &&
+            !CAMPAIGN_VOLUNTEER_TABS.includes(activeTab) &&
+            !GOVERNANCE_TABS.includes(activeTab) &&
+            !REQUEST_TABS.includes(activeTab) &&
+            !LOCATION_TABS.includes(activeTab) &&
+            !ID_CARD_TABS.includes(activeTab) && (
+              <AdministrationAndGovernanceModule activeTab={activeTab} />
+            )}
+
+          {/* =========================================================================
+              PRINTABLE LIFESAVER ID CARD MODAL (CR-80 ISO COMPLIANT WITH QR CODE)
+              ========================================================================= */}
+          <PrintIdCardModal
+            donor={selectedDonorForCard}
+            isOpen={isPrintModalOpen}
+            onClose={() => setIsPrintModalOpen(false)}
+          />
 
           {/* =========================================================================
               BOTTOM BAR: NATIONWIDE IMPACT FOOTPRINT

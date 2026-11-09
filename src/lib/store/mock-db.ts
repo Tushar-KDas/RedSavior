@@ -14,6 +14,7 @@ import {
   BloodGroup,
   UserRole,
 } from '@/types';
+import { MASTER_64_DISTRICT_DONORS, MASTER_DONOR_USERS } from '@/data/master-donors-seed';
 
 // Realistic Seed Data for Nationwide Bangladesh Blood Network
 export const INITIAL_USERS: UserProfile[] = [
@@ -451,8 +452,8 @@ export const INITIAL_ID_CARDS: IdCardData[] = [
 
 // In-Memory / LocalStorage State Store
 class RedSaviorStore {
-  private users: UserProfile[] = INITIAL_USERS;
-  private donors: DonorProfile[] = INITIAL_DONORS;
+  private users: UserProfile[] = [...INITIAL_USERS, ...MASTER_DONOR_USERS];
+  private donors: DonorProfile[] = [...INITIAL_DONORS, ...MASTER_64_DISTRICT_DONORS];
   private requests: BloodRequest[] = INITIAL_REQUESTS;
   private hospitals: Hospital[] = INITIAL_HOSPITALS;
   private bloodBanks: BloodBank[] = INITIAL_BLOOD_BANKS;
@@ -469,9 +470,17 @@ class RedSaviorStore {
   private loadFromStorage() {
     try {
       const u = localStorage.getItem('redsavior_users');
-      if (u) this.users = JSON.parse(u);
+      if (u) {
+        const parsedUsers = JSON.parse(u);
+        if (parsedUsers.length > 50) this.users = parsedUsers;
+        else this.users = [...INITIAL_USERS, ...MASTER_DONOR_USERS];
+      }
       const d = localStorage.getItem('redsavior_donors');
-      if (d) this.donors = JSON.parse(d);
+      if (d) {
+        const parsedDonors = JSON.parse(d);
+        if (parsedDonors.length > 50) this.donors = parsedDonors;
+        else this.donors = [...INITIAL_DONORS, ...MASTER_64_DISTRICT_DONORS];
+      }
       const r = localStorage.getItem('redsavior_requests');
       if (r) this.requests = JSON.parse(r);
       const c = localStorage.getItem('redsavior_current_user');

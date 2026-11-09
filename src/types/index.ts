@@ -79,6 +79,8 @@ export interface DonorProfile {
   reviewCount: number;
   bio?: string;
   avatarUrl?: string;
+  loginEmail?: string;
+  loginPassword?: string;
   createdAt: string;
 }
 
