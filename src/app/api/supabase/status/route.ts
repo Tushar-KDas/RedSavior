@@ -19,30 +19,51 @@ export async function GET() {
   }
 
   try {
-    // Ping Supabase REST endpoint
-    const res = await fetch(`${url}/rest/v1/?apikey=${anonKey}`, {
+    // Ping Supabase Auth settings endpoint (accessible with publishable / anon key)
+    const res = await fetch(`${url}/auth/v1/settings`, {
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
       },
     });
 
-    if (res.ok || res.status === 200 || res.status === 404) {
+    if (res.ok || res.status === 200) {
       return NextResponse.json({
         connected: true,
         mode: 'cloud',
         message: 'Successfully connected to live Supabase cloud database instance!',
         url,
         statusCode: res.status,
-      });
-    } else {
-      return NextResponse.json({
-        connected: false,
-        mode: 'error',
-        message: `Supabase returned HTTP status ${res.status}: ${res.statusText}. Please verify your anon key.`,
-        url,
+        hasServiceKey: !!serviceKey && serviceKey.startsWith('sb_secret_'),
       });
     }
+
+    // Try fallback check on rest endpoint with service role if available
+    if (serviceKey) {
+      const restRes = await fetch(`${url}/rest/v1/`, {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+        },
+      });
+      if (restRes.ok || restRes.status === 200) {
+        return NextResponse.json({
+          connected: true,
+          mode: 'cloud',
+          message: 'Connected to Supabase via Service Role Key!',
+          url,
+          statusCode: restRes.status,
+          hasServiceKey: true,
+        });
+      }
+    }
+
+    return NextResponse.json({
+      connected: false,
+      mode: 'error',
+      message: `Supabase returned HTTP status ${res.status}: ${res.statusText}. Please verify your key.`,
+      url,
+    });
   } catch (err: any) {
     return NextResponse.json({
       connected: false,

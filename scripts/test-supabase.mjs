@@ -15,12 +15,14 @@ const getEnvVar = (key) => {
 
 const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
 const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+const supabaseSecretKey = getEnvVar('SUPABASE_SERVICE_ROLE_KEY');
 
 console.log('==================================================');
 console.log('   RedSavior Supabase Cloud Connection Tester');
 console.log('==================================================');
 console.log(`Configured Project URL: ${supabaseUrl || '(not configured)'}`);
-console.log(`Anon Key Length:        ${supabaseAnonKey ? supabaseAnonKey.length + ' chars' : '(missing)'}`);
+console.log(`Publishable / Anon Key: ${supabaseAnonKey ? supabaseAnonKey.substring(0, 18) + '...' : '(missing)'}`);
+console.log(`Service Role Secret:    ${supabaseSecretKey ? supabaseSecretKey.substring(0, 14) + '...' : '(missing)'}`);
 
 if (!supabaseUrl || supabaseUrl.includes('mock') || supabaseUrl.includes('your-project-ref')) {
   console.log('\n[STATUS]: MOCK MODE ACTIVE');
@@ -32,22 +34,35 @@ if (!supabaseUrl || supabaseUrl.includes('mock') || supabaseUrl.includes('your-p
   process.exit(0);
 }
 
-console.log('\nPinging Supabase REST Endpoint at: ' + supabaseUrl + '/rest/v1/ ...');
+console.log('\nPinging Supabase Cloud Endpoint at: ' + supabaseUrl + ' ...');
 
 try {
-  const res = await fetch(`${supabaseUrl}/rest/v1/?apikey=${supabaseAnonKey}`, {
+  // Test Auth API with publishable key
+  const res = await fetch(`${supabaseUrl}/auth/v1/settings`, {
     headers: {
       apikey: supabaseAnonKey,
       Authorization: `Bearer ${supabaseAnonKey}`,
     },
   });
 
-  if (res.ok || res.status === 200 || res.status === 404) {
+  if (res.ok || res.status === 200) {
     console.log(`\n[SUCCESS]: Connected to Supabase Cloud! HTTP Status: ${res.status}`);
-    console.log('Database connection is healthy and responsive.');
+    console.log('Database and Auth service are healthy and responding.');
+
+    // Test PostgREST with Secret key if available
+    if (supabaseSecretKey) {
+      const restRes = await fetch(`${supabaseUrl}/rest/v1/`, {
+        headers: {
+          apikey: supabaseSecretKey,
+          Authorization: `Bearer ${supabaseSecretKey}`,
+        },
+      });
+      if (restRes.ok || restRes.status === 200) {
+        console.log(`[SUCCESS]: PostgREST Database API Verified (HTTP ${restRes.status}).`);
+      }
+    }
   } else {
     console.log(`\n[WARNING]: Supabase returned HTTP status ${res.status} (${res.statusText})`);
-    console.log('Check if your anon key is correct.');
   }
 } catch (err) {
   console.error(`\n[ERROR]: Failed to connect to ${supabaseUrl}`);

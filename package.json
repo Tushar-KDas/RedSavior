@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node --use-system-ca ./node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "test": "node --test tests/unit/*.test.mjs",
-    "test:supabase": "node scripts/test-supabase.mjs"
+    "test:supabase": "node --use-system-ca scripts/test-supabase.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
